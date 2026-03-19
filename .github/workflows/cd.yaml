@@ -61,6 +61,7 @@ jobs:
         run: |
           docker buildx build \
             --push \
+            --tag ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/frontend:${{ steps.tag.outputs.tag }} \
             --tag ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/frontend:latest \
             frontend
 
@@ -68,6 +69,7 @@ jobs:
         run: |
           docker buildx build \
             --push \
+            --tag ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/backend:${{ steps.tag.outputs.tag }} \
             --tag ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/backend:latest \
             backend
 
