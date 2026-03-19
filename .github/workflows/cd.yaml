@@ -56,8 +56,8 @@ jobs:
           context: frontend
           push: true
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/${{ secrets.HARBOR_PROJECT }}/frontend:${{ steps.tag.outputs.tag }}
-            ${{ secrets.HARBOR_REGISTRY }}/${{ secrets.HARBOR_PROJECT }}/frontend:latest
+            ${{ secrets.HARBOR_REGISTRY }}/${{ secrets.HARBOR_PROJECT }}frontend:${{ steps.tag.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/${{ secrets.HARBOR_PROJECT }}frontend:latest
           cache-from: type=gha
           cache-to:   type=gha,mode=max
 
@@ -67,8 +67,8 @@ jobs:
           context: backend
           push: true
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/${{ secrets.HARBOR_PROJECT }}/backend:${{ steps.tag.outputs.tag }}
-            ${{ secrets.HARBOR_REGISTRY }}/${{ secrets.HARBOR_PROJECT }}/backend:latest
+            ${{ secrets.HARBOR_REGISTRY }}/${{ secrets.HARBOR_PROJECT }}backend:${{ steps.tag.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/${{ secrets.HARBOR_PROJECT }}backend:latest
           cache-from: type=gha
           cache-to:   type=gha,mode=max
 
