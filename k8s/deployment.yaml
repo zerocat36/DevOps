@@ -1,0 +1,225 @@
+# ── Namespace ─────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dino-run
+
+---
+# ── Frontend Deployment ───────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dino-frontend
+  namespace: dino-run
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dino-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: dino-frontend
+    spec:
+      imagePullSecrets:
+        - name: harbor-pull-secret
+      containers:
+        - name: dino-frontend
+          image: HARBOR_REGISTRY/dino-run/frontend:latest
+          env:
+            - name: BACKEND_HOST
+              value: "dino-backend-svc"
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: 100m, memory: 64Mi }
+            limits:   { cpu: 200m, memory: 128Mi }
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dino-frontend-svc
+  namespace: dino-run
+spec:
+  selector:
+    app: dino-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+
+---
+# ── Backend Deployment ────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dino-backend
+  namespace: dino-run
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dino-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: dino-backend
+    spec:
+      imagePullSecrets:
+        - name: harbor-pull-secret
+      containers:
+        - name: dino-backend
+          image: HARBOR_REGISTRY/dino-run/backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_LEADER_HOST
+              value: "redis-leader-svc"
+            - name: REDIS_FOLLOWER_HOST
+              value: "redis-follower-svc"
+          resources:
+            requests: { cpu: 200m, memory: 256Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dino-backend-svc
+  namespace: dino-run
+spec:
+  selector:
+    app: dino-backend
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+---
+# ── Redis Leader (StatefulSet) ────────────────────────────────────
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-leader
+  namespace: dino-run
+spec:
+  serviceName: redis-leader-svc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-leader
+  template:
+    metadata:
+      labels:
+        app: redis-leader
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 200m, memory: 256Mi }
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-leader-svc
+  namespace: dino-run
+spec:
+  selector:
+    app: redis-leader
+  ports:
+    - port: 6379
+      targetPort: 6379
+
+---
+# ── Redis Follower ────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-follower
+  namespace: dino-run
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: redis-follower
+  template:
+    metadata:
+      labels:
+        app: redis-follower
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2-alpine
+          command: ["redis-server", "--replicaof", "redis-leader-svc", "6379"]
+          ports:
+            - containerPort: 6379
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 200m, memory: 256Mi }
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-follower-svc
+  namespace: dino-run
+spec:
+  selector:
+    app: redis-follower
+  ports:
+    - port: 6379
+      targetPort: 6379
+
+---
+# ── Ingress ───────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dino-ingress
+  namespace: dino-run
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: dino-backend-svc
+                port: { number: 8080 }
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dino-frontend-svc
+                port: { number: 80 }

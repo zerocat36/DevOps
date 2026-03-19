@@ -1,0 +1,37 @@
+plugins {
+    id 'org.springframework.boot' version '3.4.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+}
+
+group   = 'com.dinorun'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Lettuce — Redis 비동기 클라이언트 (Spring Data Redis 기본)
+    implementation 'io.lettuce:lettuce-core'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.github.codemonstur:embedded-redis:1.4.3'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// bootJar 결과물 이름 고정 (Dockerfile COPY *.jar 와 매칭)
+bootJar {
+    archiveFileName = 'app.jar'
+}

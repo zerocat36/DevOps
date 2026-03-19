@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  redis-leader:
+    image: redis:7.2-alpine
+    ports:
+      - "6379:6379"
+
+  redis-follower:
+    image: redis:7.2-alpine
+    command: redis-server --replicaof redis-leader 6379
+    depends_on: [redis-leader]
+
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_LEADER_HOST:   redis-leader
+      REDIS_FOLLOWER_HOST: redis-follower
+    depends_on: [redis-leader, redis-follower]
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    environment:
+      BACKEND_HOST: backend
+    depends_on: [backend]

@@ -1,0 +1,29 @@
+# ── K8s 민감 파일 ────────────────────────────────────────────────
+# secret.yaml 은 Harbor/DB 자격증명 포함 → git 에 절대 올리지 않음
+# cd.yml 의 kubectl create secret 명령으로 대체
+k8s/secret.yaml
+k8s/*-secret.yaml
+
+# ── 로컬 환경 설정 ───────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
+
+# ── Vue / Node ───────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+
+# ── Spring Boot / Gradle ─────────────────────────────────────────
+backend/build/
+backend/.gradle/
+*.jar
+*.war
+
+# ── Docker ───────────────────────────────────────────────────────
+.dockerignore
+
+# ── IDE ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
