@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
 
 env:
-  HARBOR_HOST:     ${{ secrets.HARBOR_HOST }}      # docker login용 도메인 (harbor.example.com)
-  HARBOR_REGISTRY: ${{ secrets.HARBOR_REGISTRY }}  # 이미지 주소용 (harbor.example.com/sample)
-  HARBOR_PROJECT:  ${{ secrets.HARBOR_PROJECT }}   # 프로젝트 이름 (dino-run)
+  HARBOR_HOST:     ${{ secrets.HARBOR_HOST }}
+  HARBOR_REGISTRY: ${{ secrets.HARBOR_REGISTRY }}
+  HARBOR_PROJECT:  ${{ secrets.HARBOR_PROJECT }}
   HARBOR_USER:     ${{ secrets.HARBOR_USER }}
   HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
   AWS_REGION:      ${{ secrets.AWS_REGION }}
@@ -55,27 +55,23 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      # with: tags 대신 run: 에서 직접 docker buildx build 실행
+      # → env 변수가 shell에서 정상 치환됨
       - name: Build & push frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: frontend
-          push: true
-          tags: |
-            ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/frontend:${{ steps.tag.outputs.tag }}
-            ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/frontend:latest
-          cache-from: type=gha
-          cache-to:   type=gha,mode=max
+        run: |
+          docker buildx build \
+            --push \
+            --tag ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/frontend:${{ steps.tag.outputs.tag }} \
+            --tag ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/frontend:latest \
+            frontend
 
       - name: Build & push backend
-        uses: docker/build-push-action@v5
-        with:
-          context: backend
-          push: true
-          tags: |
-            ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/backend:${{ steps.tag.outputs.tag }}
-            ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/backend:latest
-          cache-from: type=gha
-          cache-to:   type=gha,mode=max
+        run: |
+          docker buildx build \
+            --push \
+            --tag ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/backend:${{ steps.tag.outputs.tag }} \
+            --tag ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/backend:latest \
+            backend
 
   # ── JOB 2: EKS 배포 ───────────────────────────────────────────
   deploy:
@@ -102,7 +98,8 @@ jobs:
 
       - name: Create namespace & Harbor pull secret
         run: |
-          kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create namespace ${{ env.K8S_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
 
           kubectl create secret docker-registry harbor-pull-secret \
             --docker-server=${{ env.HARBOR_REGISTRY }} \
@@ -133,8 +130,10 @@ jobs:
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/dino-frontend --namespace ${{ env.K8S_NAMESPACE }} --timeout=300s
-          kubectl rollout status deployment/dino-backend  --namespace ${{ env.K8S_NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/dino-frontend \
+            --namespace ${{ env.K8S_NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/dino-backend \
+            --namespace ${{ env.K8S_NAMESPACE }} --timeout=300s
 
       - name: Smoke test
         run: |
