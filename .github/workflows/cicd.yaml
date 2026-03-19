@@ -1,4 +1,4 @@
-name: CD — Harbor push & EKS deploy
+name: CI/CD — Harbor push & EKS deploy
 
 on:
   push:
