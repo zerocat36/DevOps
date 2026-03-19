@@ -55,6 +55,15 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      - name: Debug image tag
+        run: |
+          echo "HARBOR_REGISTRY=[${HARBOR_REGISTRY}]"
+          echo "HARBOR_PROJECT=[${HARBOR_PROJECT}]"
+          echo "FULL_TAG=[${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:test]"
+        env:
+          HARBOR_REGISTRY: ${{ env.HARBOR_REGISTRY }}
+          HARBOR_PROJECT:  ${{ env.HARBOR_PROJECT }}
+
       # with: tags 대신 run: 에서 직접 docker buildx build 실행
       # → env 변수가 shell에서 정상 치환됨
       - name: Build & push frontend
