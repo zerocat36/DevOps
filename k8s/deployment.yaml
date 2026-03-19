@@ -1,16 +1,8 @@
-# ── Namespace ─────────────────────────────────────────────────────
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: dino-run
-
----
 # ── Frontend Deployment ───────────────────────────────────────────
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dino-frontend
-  namespace: dino-run
 spec:
   replicas: 2
   selector:
@@ -49,7 +41,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: dino-frontend-svc
-  namespace: dino-run
 spec:
   selector:
     app: dino-frontend
@@ -63,7 +54,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dino-backend
-  namespace: dino-run
 spec:
   replicas: 2
   selector:
@@ -108,7 +98,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: dino-backend-svc
-  namespace: dino-run
 spec:
   selector:
     app: dino-backend
@@ -122,7 +111,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-leader
-  namespace: dino-run
 spec:
   serviceName: redis-leader-svc
   replicas: 1
@@ -148,7 +136,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis-leader-svc
-  namespace: dino-run
 spec:
   selector:
     app: redis-leader
@@ -162,7 +149,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis-follower
-  namespace: dino-run
 spec:
   replicas: 2
   selector:
@@ -188,7 +174,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis-follower-svc
-  namespace: dino-run
 spec:
   selector:
     app: redis-follower
@@ -202,7 +187,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: dino-ingress
-  namespace: dino-run
   annotations:
     kubernetes.io/ingress.class: "alb"
     alb.ingress.kubernetes.io/scheme: "internet-facing"

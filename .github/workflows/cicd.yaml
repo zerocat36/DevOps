@@ -96,11 +96,8 @@ jobs:
             --name ${{ env.EKS_CLUSTER }} \
             --region ${{ env.AWS_REGION }}
 
-      - name: Create namespace & Harbor pull secret
+      - name:  Harbor pull secret
         run: |
-          kubectl create namespace ${{ env.K8S_NAMESPACE }} \
-            --dry-run=client -o yaml | kubectl apply -f -
-
           kubectl create secret docker-registry harbor-pull-secret \
             --docker-server=${{ env.HARBOR_REGISTRY }} \
             --docker-username=${{ env.HARBOR_USER }} \
@@ -110,11 +107,8 @@ jobs:
 
       - name: Apply K8s manifests
         run: |
-          sed \
-            -e "s|HARBOR_REGISTRY|${{ env.HARBOR_REGISTRY }}|g" \
-            -e "s|namespace: dino-run|namespace: ${{ env.K8S_NAMESPACE }}|g" \
-            -e "s|name: dino-run|name: ${{ env.K8S_NAMESPACE }}|g" \
-            k8s/all-in-one.yaml | kubectl apply -f -
+          sed -e "s|HARBOR_REGISTRY|${{ env.HARBOR_REGISTRY }}|g" k8s/deployment.yaml \
+          | kubectl apply -f - --namespace ${{ env.K8S_NAMESPACE }}
 
       - name: Update image tags
         run: |
