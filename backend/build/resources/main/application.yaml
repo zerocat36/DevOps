@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+redis:
+  leader:
+    host: ${REDIS_LEADER_HOST:localhost}
+    port: ${REDIS_LEADER_PORT:6379}
+  follower:
+    host: ${REDIS_FOLLOWER_HOST:localhost}
+    port: ${REDIS_FOLLOWER_PORT:6379}
+
+spring:
+  mvc:
+    async:
+      request-timeout: -1   # SSE 타임아웃 없음
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true   # liveness / readiness probe 활성화

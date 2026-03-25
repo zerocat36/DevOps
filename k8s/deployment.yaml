@@ -2,12 +2,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dino-frontend
+  name: sk014-frontend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: dino-frontend
+      app: sk014-frontend
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -16,16 +16,16 @@ spec:
   template:
     metadata:
       labels:
-        app: dino-frontend
+        app: sk014-frontend
     spec:
       imagePullSecrets:
         - name: harbor-pull-secret
       containers:
-        - name: dino-frontend
-          image: HARBOR_REGISTRY/dino-run/frontend:latest
+        - name: sk014-frontend
+          image: HARBOR_REGISTRY/sk014/frontend:latest
           env:
             - name: BACKEND_HOST
-              value: "dino-backend-svc"
+              value: "sk014-backend-svc"
           ports:
             - containerPort: 80
           resources:
@@ -40,10 +40,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: dino-frontend-svc
+  name: sk014-frontend-svc
 spec:
   selector:
-    app: dino-frontend
+    app: sk014-frontend
   ports:
     - port: 80
       targetPort: 80
@@ -53,12 +53,12 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dino-backend
+  name: sk014-backend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: dino-backend
+      app: sk014-backend
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -67,13 +67,13 @@ spec:
   template:
     metadata:
       labels:
-        app: dino-backend
+        app: sk014-backend
     spec:
       imagePullSecrets:
         - name: harbor-pull-secret
       containers:
-        - name: dino-backend
-          image: HARBOR_REGISTRY/dino-run/backend:latest
+        - name: sk014-backend
+          image: HARBOR_REGISTRY/sk014/backend:latest
           ports:
             - containerPort: 8080
           env:
@@ -97,10 +97,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: dino-backend-svc
+  name: sk014-backend-svc
 spec:
   selector:
-    app: dino-backend
+    app: sk014-backend
   ports:
     - port: 8080
       targetPort: 8080
@@ -186,7 +186,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: dino-ingress
+  name: sk014-ingress
   annotations:
     kubernetes.io/ingress.class: "alb"
     alb.ingress.kubernetes.io/scheme: "internet-facing"
@@ -199,11 +199,11 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: dino-backend-svc
+                name: sk014-backend-svc
                 port: { number: 8080 }
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: dino-frontend-svc
+                name: sk014-frontend-svc
                 port: { number: 80 }

@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{ nickname: string }>()
 const emit = defineEmits<{
@@ -49,10 +49,40 @@ const hiScore  = ref(Number(localStorage.getItem('dino-hi') || 0))
 const phase    = ref<'idle' | 'running' | 'over'>('idle')
 
 // ── 게임 오브젝트 ────────────────────────────────────────────────
-const GROUND_Y   = 200   // 지면 Y
+const GROUND_Y   = 200   // 지면 Y (공룡 발 위치)
+const FEET_LINE  = GROUND_Y + 36 // 발·장애물 하단이 맞닿는 선 (draw와 동일)
 const DINO_X     = 80    // 공룡 고정 X
 const GRAVITY    = 0.6
 const JUMP_VEL   = -13
+
+/** drawDino()와 동일한 축 정렬 AABB (머리·몸·꼬리·다리 포함) */
+function dinoHitbox(y: number, grounded: boolean): { l: number; r: number; t: number; b: number } {
+  const legBottom = grounded ? y + 28 + 10 : y + 28 + 8
+  return {
+    l: DINO_X,
+    r: DINO_X + 32,
+    t: y - 10,
+    b: legBottom,
+  }
+}
+
+/** draw()의 장애물 3블록과 동일한 히트박스 */
+function obstacleHitboxes(o: Obstacle): Array<{ l: number; r: number; t: number; b: number }> {
+  const oy = FEET_LINE - o.h
+  const h = o.h
+  return [
+    { l: o.x, r: o.x + o.w, t: oy, b: FEET_LINE },
+    { l: o.x - 5, r: o.x + 1, t: oy + 8, b: oy + 8 + h * 0.5 },
+    { l: o.x + o.w - 1, r: o.x + o.w + 5, t: oy + 12, b: oy + 12 + h * 0.4 },
+  ]
+}
+
+function aabbOverlap(
+  a: { l: number; r: number; t: number; b: number },
+  b: { l: number; r: number; t: number; b: number },
+): boolean {
+  return a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t
+}
 
 let dinoY   = GROUND_Y
 let dinoVY  = 0
@@ -160,19 +190,16 @@ function loop() {
     obstacleInterval = 60 + Math.random() * 50
   }
 
-  // 장애물 이동 & 충돌 검사
+  // 장애물 이동 & 충돌 검사 (그리기 좌표와 동일한 기준)
   obstacles = obstacles.filter(o => o.x + o.w > 0)
+  const dBox = dinoHitbox(dinoY, onGround)
   for (const o of obstacles) {
     o.x -= speed
-    // 충돌 박스 (약간 여유)
-    if (
-      DINO_X + 4  < o.x + o.w - 4 &&
-      DINO_X + 28 > o.x + 4 &&
-      dinoY + 4   < GROUND_Y + 6 &&
-      dinoY + 36  > GROUND_Y - o.h
-    ) {
-      gameOver()
-      return
+    for (const hBox of obstacleHitboxes(o)) {
+      if (aabbOverlap(dBox, hBox)) {
+        gameOver()
+        return
+      }
     }
   }
 
@@ -227,8 +254,8 @@ function draw() {
   ctx.strokeStyle = C.ground
   ctx.lineWidth = 1.5
   ctx.beginPath()
-  ctx.moveTo(0, GROUND_Y + 36)
-  ctx.lineTo(W, GROUND_Y + 36)
+  ctx.moveTo(0, FEET_LINE)
+  ctx.lineTo(W, FEET_LINE)
   ctx.stroke()
 
   // 공룡 (픽셀 스타일 사각형 조합)
@@ -238,7 +265,7 @@ function draw() {
   // 장애물
   ctx.fillStyle = C.obstacle
   for (const o of obstacles) {
-    const oy = GROUND_Y + 36 - o.h
+    const oy = FEET_LINE - o.h
     // 선인장 느낌의 픽셀 블록
     ctx.fillRect(o.x,     oy,      o.w,     o.h)
     ctx.fillRect(o.x - 5, oy + 8,  6,       o.h * 0.5)
@@ -250,8 +277,8 @@ function draw() {
   ctx.lineWidth = 0.5
   ctx.setLineDash([4, 12])
   ctx.beginPath()
-  ctx.moveTo(0, GROUND_Y + 37)
-  ctx.lineTo(W, GROUND_Y + 37)
+  ctx.moveTo(0, FEET_LINE + 1)
+  ctx.lineTo(W, FEET_LINE + 1)
   ctx.stroke()
   ctx.setLineDash([])
 }
