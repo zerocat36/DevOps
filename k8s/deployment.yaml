@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: sk014-frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: sk014-frontend
@@ -55,7 +55,7 @@ kind: Deployment
 metadata:
   name: sk014-backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: sk014-backend
@@ -150,7 +150,7 @@ kind: Deployment
 metadata:
   name: redis-follower
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: redis-follower
