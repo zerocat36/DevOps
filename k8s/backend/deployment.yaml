@@ -1,0 +1,43 @@
+# ── Backend Deployment ────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sk014-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sk014-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: sk014-backend
+    spec:
+      imagePullSecrets:
+        - name: harbor-pull-secret
+      containers:
+        - name: sk014-backend
+          image: HARBOR_REGISTRY/sk014/backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_LEADER_HOST
+              value: "sk014-redis-leader-svc"
+            - name: REDIS_FOLLOWER_HOST
+              value: "sk014-redis-follower-svc"
+          resources:
+            requests: { cpu: 200m, memory: 256Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            initialDelaySeconds: 15
+            periodSeconds: 5
