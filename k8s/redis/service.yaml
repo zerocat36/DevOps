@@ -1,0 +1,24 @@
+# ── Redis Service ───────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sk014-redis-leader-svc
+spec:
+  selector:
+    app: sk014-redis-leader
+  ports:
+    - port: 6379
+      targetPort: 6379
+
+---
+# ── Redis Follower Service ────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sk014-redis-follower-svc
+spec:
+  selector:
+    app: sk014-redis-follower
+  ports:
+    - port: 6379
+      targetPort: 6379

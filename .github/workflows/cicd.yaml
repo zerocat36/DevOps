@@ -107,8 +107,9 @@ jobs:
 
       - name: Apply K8s manifests
         run: |
-          sed -e "s|HARBOR_REGISTRY|${{ env.HARBOR_REGISTRY }}|g" k8s/deployment.yaml \
-          | kubectl apply -f - --namespace ${{ env.K8S_NAMESPACE }}
+          find k8s/ -name "*.yaml" | while read file; do
+          sed -e "s|HARBOR_REGISTRY|${{ env.HARBOR_REGISTRY }}|g" "$file"
+          done | kubectl apply -f - --namespace ${{ env.K8S_NAMESPACE }}
 
       - name: Update image tags
         run: |

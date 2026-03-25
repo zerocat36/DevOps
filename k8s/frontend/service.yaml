@@ -1,0 +1,11 @@
+# ── Frontend Service ───────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sk014-frontend-svc
+spec:
+  selector:
+    app: sk014-frontend
+  ports:
+    - port: 80
+      targetPort: 80
