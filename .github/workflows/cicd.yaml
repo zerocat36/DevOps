@@ -114,24 +114,24 @@ jobs:
         run: |
           TAG=${{ needs.build-and-push.outputs.image-tag }}
 
-          kubectl set image deployment/dino-frontend \
-            dino-frontend=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/frontend:${TAG} \
+          kubectl set image deployment/sk014-frontend \
+            sk014-frontend=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/frontend:${TAG} \
             --namespace ${{ env.K8S_NAMESPACE }}
 
-          kubectl set image deployment/dino-backend \
-            dino-backend=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/backend:${TAG} \
+          kubectl set image deployment/sk014-backend \
+            sk014-backend=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/backend:${TAG} \
             --namespace ${{ env.K8S_NAMESPACE }}
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/dino-frontend \
+          kubectl rollout status deployment/sk014-frontend \
             --namespace ${{ env.K8S_NAMESPACE }} --timeout=300s
-          kubectl rollout status deployment/dino-backend \
+          kubectl rollout status deployment/sk014-backend \
             --namespace ${{ env.K8S_NAMESPACE }} --timeout=300s
 
       - name: Smoke test
         run: |
-          INGRESS=$(kubectl get ingress dino-ingress \
+          INGRESS=$(kubectl get ingress sk014-ingress \
             --namespace ${{ env.K8S_NAMESPACE }} \
             -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 

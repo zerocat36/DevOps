@@ -78,9 +78,9 @@ spec:
             - containerPort: 8080
           env:
             - name: REDIS_LEADER_HOST
-              value: "redis-leader-svc"
+              value: "sk014-redis-leader-svc"
             - name: REDIS_FOLLOWER_HOST
-              value: "redis-follower-svc"
+              value: "sk014-redis-follower-svc"
           resources:
             requests: { cpu: 200m, memory: 256Mi }
             limits:   { cpu: 500m, memory: 512Mi }
@@ -110,20 +110,20 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: redis-leader
+  name: sk014-redis-leader
 spec:
-  serviceName: redis-leader-svc
+  serviceName: sk014-redis-leader-svc
   replicas: 1
   selector:
     matchLabels:
-      app: redis-leader
+      app: sk014-redis-leader
   template:
     metadata:
       labels:
-        app: redis-leader
+        app: sk014-redis-leader
     spec:
       containers:
-        - name: redis
+        - name: sk014-redis
           image: redis:7.2-alpine
           ports:
             - containerPort: 6379
@@ -135,10 +135,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-leader-svc
+  name: sk014-redis-leader-svc
 spec:
   selector:
-    app: redis-leader
+    app: sk014-redis-leader
   ports:
     - port: 6379
       targetPort: 6379
@@ -148,21 +148,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-follower
+  name: sk014-redis-follower
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: redis-follower
+      app: sk014-redis-follower
   template:
     metadata:
       labels:
-        app: redis-follower
+        app: sk014-redis-follower
     spec:
       containers:
-        - name: redis
+        - name: sk014-redis
           image: redis:7.2-alpine
-          command: ["redis-server", "--replicaof", "redis-leader-svc", "6379"]
+          command: ["redis-server", "--replicaof", "sk014-redis-leader-svc", "6379"]
           ports:
             - containerPort: 6379
           resources:
@@ -173,10 +173,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-follower-svc
+  name: sk014-redis-follower-svc
 spec:
   selector:
-    app: redis-follower
+    app: sk014-redis-follower
   ports:
     - port: 6379
       targetPort: 6379
