@@ -138,6 +138,11 @@ jobs:
           kubectl rollout restart deployment/sk014-grafana \
             --namespace ${{ env.K8S_NAMESPACE }} 2>/dev/null || true
 
+      - name: Restart Prometheus (reload scrape config)
+        run: |
+          kubectl rollout restart deployment/sk014-prometheus \
+            --namespace ${{ env.K8S_NAMESPACE }} 2>/dev/null || true
+
       - name: Update image tags
         run: |
           TAG=${{ needs.build-and-push.outputs.image-tag }}

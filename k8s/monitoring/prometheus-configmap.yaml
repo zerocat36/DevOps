@@ -9,9 +9,20 @@ data:
       scrape_interval: 15s
       evaluation_interval: 15s
     scrape_configs:
-      - job_name: sk014-backend
+      # 1) 커스텀 /metrics (애플리케이션 컨트롤러)
+      - job_name: sk014-backend-metrics
         metrics_path: /metrics
         static_configs:
           - targets: ['sk014-backend-svc:8080']
             labels:
               service: backend
+              application: sk014-backend
+
+      # 2) 표준 Actuator Prometheus 엔드포인트 (Spring Boot)
+      - job_name: sk014-backend-actuator
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets: ['sk014-backend-svc:8080']
+            labels:
+              service: backend
+              application: sk014-backend
