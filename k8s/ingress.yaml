@@ -4,12 +4,13 @@ kind: Ingress
 metadata:
   name: sk014-ingress
   annotations:
-    kubernetes.io/ingress.class: "alb"
-    alb.ingress.kubernetes.io/scheme: "internet-facing"
-    alb.ingress.kubernetes.io/target-type: "ip"
+    nginx.ingress.kubernetes.io/scheme: "internet-facing"
+    nginx.ingress.kubernetes.io/target-type: "ip"
 spec:
+  ingressClassName: public-nginx
   rules:
-    - http:
+    - host: ingress.skala25a.project.skala-ai.com
+      http:
         paths:
           - path: /api
             pathType: Prefix
