@@ -1,0 +1,59 @@
+# ── Grafana (서브패스 /grafana — Ingress와 Root URL 일치 필요) ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sk014-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sk014-grafana
+  template:
+    metadata:
+      labels:
+        app: sk014-grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.4.0
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: sk014-grafana-secret
+                  key: admin-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sk014-grafana-secret
+                  key: admin-password
+            - name: GF_SERVER_ROOT_URL
+              value: "https://sk014.project.skala-ai.com/grafana/"
+            - name: GF_SERVER_SERVE_FROM_SUB_PATH
+              value: "true"
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+            - name: GF_AUTH_DISABLE_LOGIN_FORM
+              value: "false"
+          volumeMounts:
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards/sk014
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+      volumes:
+        - name: datasources
+          configMap:
+            name: sk014-grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: sk014-grafana-dashboard-provider
+        - name: dashboards
+          configMap:
+            name: sk014-grafana-dashboard-backend

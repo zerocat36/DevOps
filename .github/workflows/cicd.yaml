@@ -105,6 +105,23 @@ jobs:
             --namespace ${{ env.K8S_NAMESPACE }} \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      # Repo → Settings → Secrets: GRAFANA_ADMIN_USER, GRAFANA_ADMIN_PASSWORD
+      - name: Grafana admin secret
+        env:
+          GRAFANA_ADMIN_USER:     ${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GRAFANA_ADMIN_USER}" ] || [ -z "${GRAFANA_ADMIN_PASSWORD}" ]; then
+            echo "::error::Set repository secrets GRAFANA_ADMIN_USER and GRAFANA_ADMIN_PASSWORD."
+            exit 1
+          fi
+          kubectl create secret generic sk014-grafana-secret \
+            --from-literal=admin-user="${GRAFANA_ADMIN_USER}" \
+            --from-literal=admin-password="${GRAFANA_ADMIN_PASSWORD}" \
+            --namespace ${{ env.K8S_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       # 파일마다 따로 apply: 여러 YAML을 파이프로 이어 붙이면 --- 구분 없이 한 스트림이 되어
       # Ingress 등 뒤쪽 리소스가 무시되거나 적용이 불안정해질 수 있음
       - name: Apply K8s manifests
@@ -115,6 +132,11 @@ jobs:
             sed -e "s|HARBOR_REGISTRY|${{ env.HARBOR_REGISTRY }}|g" "$file" \
               | kubectl apply -f - --namespace ${{ env.K8S_NAMESPACE }}
           done
+
+      - name: Restart Grafana (apply rotated admin password)
+        run: |
+          kubectl rollout restart deployment/sk014-grafana \
+            --namespace ${{ env.K8S_NAMESPACE }} 2>/dev/null || true
 
       - name: Update image tags
         run: |

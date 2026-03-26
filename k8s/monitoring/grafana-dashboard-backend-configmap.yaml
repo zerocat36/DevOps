@@ -1,0 +1,143 @@
+# Spring Boot + Micrometer 메트릭용 샘플 대시보드 (UID: sk014-backend)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sk014-grafana-dashboard-backend
+data:
+  backend-overview.json: |-
+    {
+      "title": "SK014 Backend — JVM & HTTP",
+      "uid": "sk014-backend",
+      "tags": ["sk014", "spring"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "editable": true,
+      "graphTooltip": 1,
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "templating": { "list": [] },
+      "annotations": { "list": [] },
+      "links": [],
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "JVM heap used",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 25,
+                "showPoints": "never"
+              }
+            }
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(jvm_memory_used_bytes{application=\"sk014-backend\", area=\"heap\"})",
+              "legendFormat": "heap used"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "Process CPU usage",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1,
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 20,
+                "showPoints": "never"
+              }
+            }
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "process_cpu_usage{application=\"sk014-backend\"}",
+              "legendFormat": "CPU"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "HTTP requests / sec (by status)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "showPoints": "never"
+              }
+            }
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (status) (rate(http_server_requests_seconds_count{application=\"sk014-backend\"}[5m]))",
+              "legendFormat": "{{status}}"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "JVM live threads",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 20,
+                "showPoints": "never"
+              }
+            }
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "jvm_threads_live{application=\"sk014-backend\"}",
+              "legendFormat": "threads"
+            }
+          ]
+        }
+      ]
+    }

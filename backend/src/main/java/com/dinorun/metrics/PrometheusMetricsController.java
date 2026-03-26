@@ -1,7 +1,6 @@
 package com.dinorun.metrics;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
