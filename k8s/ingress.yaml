@@ -15,6 +15,12 @@ spec:
               service:
                 name: sk014-backend-svc
                 port: { number: 8080 }
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: sk014-backend-svc
+                port: { number: 8080 }
           - path: /
             pathType: Prefix
             backend:

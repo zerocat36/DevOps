@@ -105,11 +105,16 @@ jobs:
             --namespace ${{ env.K8S_NAMESPACE }} \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      # 파일마다 따로 apply: 여러 YAML을 파이프로 이어 붙이면 --- 구분 없이 한 스트림이 되어
+      # Ingress 등 뒤쪽 리소스가 무시되거나 적용이 불안정해질 수 있음
       - name: Apply K8s manifests
         run: |
-          find k8s/ -name "*.yaml" | while read file; do
-          sed -e "s|HARBOR_REGISTRY|${{ env.HARBOR_REGISTRY }}|g" "$file"
-          done | kubectl apply -f - --namespace ${{ env.K8S_NAMESPACE }}
+          set -euo pipefail
+          find k8s -name '*.yaml' -type f | sort | while IFS= read -r file; do
+            echo "Applying $file"
+            sed -e "s|HARBOR_REGISTRY|${{ env.HARBOR_REGISTRY }}|g" "$file" \
+              | kubectl apply -f - --namespace ${{ env.K8S_NAMESPACE }}
+          done
 
       - name: Update image tags
         run: |
