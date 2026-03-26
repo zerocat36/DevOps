@@ -17,7 +17,7 @@
       <div class="over-panel" v-if="phase === 'over'">
         <p class="over-title">GAME OVER</p>
         <p class="over-score">{{ score.toString().padStart(6, '0') }}</p>
-        <p class="over-hint">press space / tap to restart</p>
+        <p class="over-hint">space / tap — restart · ↓ — duck</p>
       </div>
     </Transition>
 
@@ -25,7 +25,7 @@
     <Transition name="fade">
       <div class="over-panel" v-if="phase === 'idle'">
         <p class="over-title">READY?</p>
-        <p class="over-hint">press space / tap to start</p>
+        <p class="over-hint">space / tap — start · ↓ — duck under flyers</p>
       </div>
     </Transition>
   </div>
@@ -58,7 +58,8 @@ const JUMP_VEL   = -13
 const SPEED_START = 5
 const SPEED_MAX = 20
 const SPEED_PER_SCORE = 0.032
-const SPAWN_X = 840
+/** 장애물 왼쪽 끝이 화면 오른쪽 밖에서 시작하도록 여백 */
+const SPAWN_MARGIN = 28
 
 type Obstacle =
   | { kind: 'cactus_small'; x: number; stemW: number; stemH: number }
@@ -66,8 +67,16 @@ type Obstacle =
   | { kind: 'cactus_triple'; x: number; stemW: number; gap: number; h0: number; h1: number; h2: number }
   | { kind: 'ptero'; x: number; y: number; flapPhase: number }
 
-/** drawDino()와 동일한 축 정렬 AABB (머리·몸·꼬리·다리 포함) */
-function dinoHitbox(y: number, grounded: boolean): { l: number; r: number; t: number; b: number } {
+/** drawDino()와 동일한 축 정렬 AABB (엎드림 시 낮은 실루엣) */
+function dinoHitbox(y: number, grounded: boolean, duck: boolean): { l: number; r: number; t: number; b: number } {
+  if (duck && grounded) {
+    return {
+      l: DINO_X,
+      r: DINO_X + 36,
+      t: y + 4,
+      b: y + 32,
+    }
+  }
   const legBottom = grounded ? y + 28 + 10 : y + 28 + 8
   return {
     l: DINO_X,
@@ -148,6 +157,7 @@ function aabbOverlap(
 let dinoY   = GROUND_Y
 let dinoVY  = 0
 let onGround = true
+let ducking = false
 
 let obstacles: Obstacle[] = []
 let obstacleTimer = 0
@@ -171,7 +181,8 @@ function randomStemW(): number {
   return 10 + Math.floor(Math.random() * 5)
 }
 
-function spawnObstacle(currentScore: number): Obstacle {
+function spawnObstacle(currentScore: number, canvasW: number): Obstacle {
+  const spawnX = canvasW + SPAWN_MARGIN
   const r = Math.random()
   const pteroUnlocked = currentScore >= 160
   const pteroWeight = pteroUnlocked ? Math.min(0.32, 0.1 + currentScore / 2200) : 0
@@ -188,7 +199,7 @@ function spawnObstacle(currentScore: number): Obstacle {
     else {
       y = 172 + Math.random() * 16
     }
-    return { kind: 'ptero', x: SPAWN_X, y, flapPhase: Math.floor(Math.random() * 60) }
+    return { kind: 'ptero', x: spawnX, y, flapPhase: Math.floor(Math.random() * 60) }
   }
 
   const cactusRoll = (r - pteroWeight) / (1 - pteroWeight)
@@ -198,26 +209,26 @@ function spawnObstacle(currentScore: number): Obstacle {
   if (currentScore < 120) {
     if (cactusRoll < 0.62) {
       const stemH = 22 + Math.floor(Math.random() * 18)
-      return { kind: 'cactus_small', x: SPAWN_X, stemW, stemH }
+      return { kind: 'cactus_small', x: spawnX, stemW, stemH }
     }
     const h0 = 24 + Math.floor(Math.random() * 16)
     const h1 = 22 + Math.floor(Math.random() * 20)
-    return { kind: 'cactus_double', x: SPAWN_X, stemW, gap, h0, h1 }
+    return { kind: 'cactus_double', x: spawnX, stemW, gap, h0, h1 }
   }
 
   if (cactusRoll < 0.28) {
     const stemH = 20 + Math.floor(Math.random() * 22)
-    return { kind: 'cactus_small', x: SPAWN_X, stemW, stemH }
+    return { kind: 'cactus_small', x: spawnX, stemW, stemH }
   }
   if (cactusRoll < 0.62) {
     const h0 = 22 + Math.floor(Math.random() * 18)
     const h1 = 26 + Math.floor(Math.random() * 18)
-    return { kind: 'cactus_double', x: SPAWN_X, stemW, gap, h0, h1 }
+    return { kind: 'cactus_double', x: spawnX, stemW, gap, h0, h1 }
   }
   const h0 = 20 + Math.floor(Math.random() * 14)
   const h1 = 28 + Math.floor(Math.random() * 16)
   const h2 = 22 + Math.floor(Math.random() * 18)
-  return { kind: 'cactus_triple', x: SPAWN_X, stemW, gap, h0, h1, h2 }
+  return { kind: 'cactus_triple', x: spawnX, stemW, gap, h0, h1, h2 }
 }
 
 // ── 색상 팔레트 (도트 명암) ─────────────────────────────────────
@@ -267,11 +278,25 @@ function onKeyDown(e: KeyboardEvent) {
   if (e.code === 'Space' || e.code === 'ArrowUp') {
     e.preventDefault()
     handleInput()
+    return
+  }
+  if (e.code === 'ArrowDown') {
+    if (phase.value === 'running' && onGround) {
+      e.preventDefault()
+      ducking = true
+    }
+  }
+}
+
+function onKeyUp(e: KeyboardEvent) {
+  if (e.code === 'ArrowDown') {
+    ducking = false
   }
 }
 
 // ── 게임 시작 / 리셋 ─────────────────────────────────────────────
 function startGame() {
+  ducking = false
   phase.value = 'running'
   loop()
 }
@@ -284,6 +309,7 @@ function resetGame() {
   dinoY = GROUND_Y
   dinoVY = 0
   onGround = true
+  ducking = false
   obstacles = []
   obstacleTimer = 0
   phase.value = 'running'
@@ -305,6 +331,7 @@ function loop() {
 
   // 공룡 물리
   if (!onGround) {
+    ducking = false
     dinoVY += GRAVITY
     dinoY += dinoVY
     if (dinoY >= GROUND_Y) {
@@ -314,17 +341,18 @@ function loop() {
     }
   }
 
-  // 장애물 생성
+  // 장애물 생성 (현재 캔버스 너비 기준 오른쪽 바깥에서 등장)
   obstacleTimer++
   if (obstacleTimer >= obstacleInterval) {
     obstacleTimer = 0
-    obstacles.push(spawnObstacle(score.value))
+    const cw = canvas.value?.width ?? 800
+    obstacles.push(spawnObstacle(score.value, cw))
     obstacleInterval = nextSpawnIntervalFrames(score.value)
   }
 
   // 장애물 이동 & 충돌 검사 (그리기 좌표와 동일한 기준)
   obstacles = obstacles.filter(o => obstacleRightEdge(o) > 0)
-  const dBox = dinoHitbox(dinoY, onGround)
+  const dBox = dinoHitbox(dinoY, onGround, ducking && onGround)
   for (const o of obstacles) {
     o.x -= speed
     for (const hBox of obstacleHitboxes(o)) {
@@ -502,6 +530,11 @@ function drawPtero(o: Obstacle & { kind: 'ptero' }) {
 
 function drawDino(x: number, y: number) {
   if (!ctx) return
+  if (ducking && onGround) {
+    drawDinoDucked(x, y)
+    return
+  }
+
   const legA = Math.floor(tick / 6) % 2
   const L = (col: string, dx: number, dy: number, w: number, h: number) => {
     ctx!.fillStyle = col
@@ -552,6 +585,47 @@ function drawDino(x: number, y: number) {
   L(C.dino, 22, 11, 3, 5)
 }
 
+/** 바닥에서 ↓ 엎드림 — 낮은 히트박스에 맞춘 도트 실루엣 */
+function drawDinoDucked(x: number, y: number) {
+  if (!ctx) return
+  const legA = Math.floor(tick / 6) % 2
+  const L = (col: string, dx: number, dy: number, w: number, h: number) => {
+    ctx!.fillStyle = col
+    ctx!.fillRect(Math.round(x + dx), Math.round(y + dy), w, h)
+  }
+
+  ctx.globalAlpha = 0.22
+  L('#000000', 4, 30, 28, 2)
+  ctx.globalAlpha = 1
+
+  const sh = legA === 0 ? 5 : 4
+  L(C.dinoOl, 6, 24, 9, sh + 2)
+  L(C.dinoSh, 7, 25, 7, sh)
+  L(C.dinoOl, 20, 24, 9, sh + 2)
+  L(C.dinoSh, 21, 25, 7, sh)
+
+  L(C.dinoOl, 0, 16, 12, 8)
+  L(C.dinoSh, 1, 17, 10, 6)
+  L(C.dino, 2, 18, 8, 5)
+  L(C.dinoHi, 3, 18, 3, 2)
+
+  L(C.dinoOl, 2, 8, 32, 18)
+  L(C.dinoSh, 3, 9, 30, 16)
+  L(C.dino, 4, 10, 28, 14)
+  L(C.dinoHi, 5, 11, 8, 4)
+  L(C.dinoSh, 26, 12, 4, 10)
+
+  L(C.dinoOl, 22, 4, 14, 12)
+  L(C.dinoSh, 23, 5, 12, 10)
+  L(C.dino, 24, 6, 10, 8)
+  L(C.dinoHi, 25, 6, 5, 2)
+  L(C.dinoOl, 32, 8, 4, 4)
+
+  L(C.dinoHi, 28, 5, 4, 4)
+  L('#0a1218', 30, 6, 2, 2)
+  L('#e8f4ff', 31, 6, 1, 1)
+}
+
 // ── 캔버스 크기 맞추기 ───────────────────────────────────────────
 function resize() {
   if (!canvas.value) return
@@ -569,6 +643,7 @@ onMounted(() => {
   resize()
   window.addEventListener('resize', resize)
   window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('keyup', onKeyUp)
   draw()  // idle 상태 첫 프레임
 })
 
@@ -576,6 +651,7 @@ onUnmounted(() => {
   cancelAnimationFrame(frameId)
   window.removeEventListener('resize', resize)
   window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('keyup', onKeyUp)
 })
 </script>
 

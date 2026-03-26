@@ -6,7 +6,7 @@ metadata:
 spec:
   ingressClassName: public-nginx
   rules:
-    - host: ingress.skala26a-sk014.project.skala-ai.com
+    - host: sk014.project.skala-ai.com
       http:
         paths:
           - path: /api
