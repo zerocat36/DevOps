@@ -1,6 +1,9 @@
 {
   "name": "dino-run-frontend",
   "version": "1.0.0",
+  "engines": {
+    "node": "24.14.0"
+  },
   "scripts": {
     "dev":   "vite",
     "build": "vue-tsc && vite build",

@@ -1,6 +1,6 @@
 # ── Stage 1: build ──────────────────────────────────────────────
 # node 이미지에서 Vue 앱을 빌드해 dist/ 를 만든다
-FROM node:20-alpine AS builder
+FROM node:24.14.0-alpine AS builder
 
 WORKDIR /app
 
