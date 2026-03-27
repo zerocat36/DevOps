@@ -22,7 +22,7 @@ spec:
         - name: harbor-pull-secret
       containers:
         - name: sk014-frontend
-          image: HARBOR_REGISTRY/sk014/frontend:latest
+          image: amdp-registry.skala-ai.com/skala26a-ai1/sk014/frontend:latest
           env:
             - name: BACKEND_HOST
               value: "sk014-backend-svc"

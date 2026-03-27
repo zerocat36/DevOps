@@ -20,9 +20,13 @@ spec:
     spec:
       imagePullSecrets:
         - name: harbor-pull-secret
+      volumes:
+        - name: sk014-backend-storage
+          persistentVolumeClaim:
+            claimName: sk014-backend-pvc
       containers:
         - name: sk014-backend
-          image: HARBOR_REGISTRY/sk014/backend:latest
+          image: amdp-registry.skala-ai.com/skala26a-ai1/sk014/backend:latest
           ports:
             - containerPort: 8080
           env:
@@ -41,3 +45,6 @@ spec:
             httpGet: { path: /actuator/health/readiness, port: 8080 }
             initialDelaySeconds: 15
             periodSeconds: 5
+          volumeMounts:
+            - mountPath: /data
+              name: sk014-backend-storage
